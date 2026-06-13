@@ -1,12 +1,26 @@
 {
-  "hosting": {
-    "public": ".",
-    "ignore": [
-      "firebase.json",
-      ".firebaserc",
-      "**/.*",
-      ".git/**",
-      "**/node_modules/**"
-    ]
-  }
+  "hosting": [
+    {
+      "site": "cafe-origen-b2d5a",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "**/.*",
+        ".git/**",
+        "**/node_modules/**"
+      ]
+    },
+    {
+      "site": "cafe-origen-bq",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        ".firebaserc",
+        "**/.*",
+        ".git/**",
+        "**/node_modules/**"
+      ]
+    }
+  ]
 }
