@@ -354,24 +354,26 @@
         <input type="text" id="inputTel" placeholder="Tu WhatsApp (opcional)">
       </div>
 
-      <!-- TRATAMIENTO DE DATOS PERSONALES -->
-      <div class="datos-box">
-        <h4>Tratamiento de datos personales</h4>
-        <p>De conformidad con la <strong>Ley 1581 de 2012</strong> y el Decreto 1377 de 2013, te informamos que los datos personales que compartas en este formulario serán tratados bajo las siguientes condiciones:</p>
-        <ul>
-          <li><strong>Responsable:</strong> Café de Origen Barranquilla (en proceso de constitución)</li>
-          <li><strong>Finalidad:</strong> Investigación de mercado, análisis de preferencias de consumo y contacto previo a la apertura del establecimiento.</li>
-          <li><strong>Datos recopilados:</strong> Nombre, correo electrónico, número de WhatsApp y respuestas al formulario.</li>
-          <li><strong>Uso:</strong> Tus datos no serán vendidos, cedidos ni compartidos con terceros. Solo se usarán para informarte sobre la apertura y novedades del café.</li>
-          <li><strong>Derechos:</strong> Puedes conocer, actualizar, rectificar o solicitar la eliminación de tus datos escribiendo a nuestro correo de contacto.</li>
-          <li><strong>Conservación:</strong> Los datos se conservarán hasta que solicites su eliminación o por el tiempo necesario para la finalidad indicada.</li>
-        </ul>
-        <label class="checkbox-row" id="checkboxRow">
-          <input type="checkbox" id="checkDatos">
-          <span>Acepto el tratamiento de mis datos personales conforme a lo descrito y autorizo a <strong>Café de Origen Barranquilla</strong> a contactarme con información relacionada con la apertura del establecimiento.</span>
-        </label>
-        <p class="error-msg" id="errorDatos">Debes aceptar el tratamiento de datos para continuar.</p>
-      </div>
+      <!-- TRATAMIENTO DE DATOS (compacto: check + política plegable) -->
+      <label class="checkbox-row" id="checkboxRow" style="margin-top:4px">
+        <input type="checkbox" id="checkDatos">
+        <span>Si dejas tus datos arriba, autorizas su <strong>tratamiento</strong> para que te contactemos sobre la apertura (Ley 1581 de 2012). <a href="#politicaBox" onclick="document.getElementById('politicaBox').open=true" style="color:var(--terracota)">Ver política</a></span>
+      </label>
+      <details id="politicaBox" style="margin-top:8px">
+        <summary style="font-size:12px;color:var(--texto-suave);cursor:pointer;user-select:none">Política de tratamiento de datos</summary>
+        <div class="datos-box" style="margin-top:8px">
+          <p>De conformidad con la <strong>Ley 1581 de 2012</strong> y el Decreto 1377 de 2013, tus datos se tratan así:</p>
+          <ul>
+            <li><strong>Responsable:</strong> Café de Origen Barranquilla (en proceso de constitución).</li>
+            <li><strong>Finalidad:</strong> investigación de mercado y contacto previo a la apertura.</li>
+            <li><strong>Datos:</strong> nombre, correo, WhatsApp y respuestas del formulario.</li>
+            <li><strong>Uso:</strong> no se venden ni se comparten con terceros; solo para avisarte de la apertura y novedades.</li>
+            <li><strong>Derechos:</strong> puedes conocer, actualizar, rectificar o eliminar tus datos escribiendo a nuestro correo de contacto.</li>
+            <li><strong>Conservación:</strong> hasta que solicites su eliminación o mientras dure la finalidad.</li>
+          </ul>
+        </div>
+      </details>
+      <p class="error-msg" id="errorDatos">Para dejarnos tus datos, marca la casilla de autorización.</p>
     </div>
 
     <div class="nav-row">
@@ -522,17 +524,19 @@
     const check = document.getElementById('checkDatos');
     const errorDatos = document.getElementById('errorDatos');
 
-    if (!check.checked) {
-      errorDatos.classList.add('visible');
-      check.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return;
-    }
-    errorDatos.classList.remove('visible');
-
     // Recoger datos de contacto
     const nombre = document.getElementById('inputNombre').value.trim();
     const email = document.getElementById('inputEmail').value.trim();
     const tel = document.getElementById('inputTel').value.trim();
+    const dejoDatos = !!(nombre || email || tel);
+
+    // El consentimiento SOLO se exige si la persona dejó datos personales
+    if (dejoDatos && !check.checked) {
+      errorDatos.classList.add('visible');
+      document.getElementById('checkboxRow').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    errorDatos.classList.remove('visible');
 
     const payload = {
       ...answers,
@@ -540,8 +544,8 @@
         nombre: nombre || null,
         email: email || null,
         whatsapp: tel || null,
-        aceptoTratamientoDatos: true,
-        fechaAceptacion: new Date().toISOString()
+        aceptoTratamientoDatos: dejoDatos ? check.checked : null,
+        fechaAceptacion: (dejoDatos && check.checked) ? new Date().toISOString() : null
       },
       metadata: {
         userAgent: navigator.userAgent,
