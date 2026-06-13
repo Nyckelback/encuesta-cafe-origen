@@ -91,6 +91,11 @@
   .checkbox-row span strong { color:var(--verde); }
   .error-msg { font-size:12px; color:var(--error); margin-top:8px; display:none; }
   .error-msg.visible { display:block; }
+  /* Pregunta obligatoria sin responder */
+  .question.q-invalid > label { color:var(--error); }
+  .question.q-invalid .option-btn { border-color:var(--error); }
+  .question.q-invalid .scale-btn { border-color:var(--error); }
+  .q-error { font-size:12px; color:var(--error); margin-top:8px; }
 
   /* NAV */
   .nav-row { display:flex; justify-content:space-between; align-items:center; margin-top:40px; gap:12px; }
@@ -357,7 +362,7 @@
       <!-- TRATAMIENTO DE DATOS (mínimo: 1 línea + política en página aparte) -->
       <label class="checkbox-row" id="checkboxRow" style="margin-top:4px">
         <input type="checkbox" id="checkDatos">
-        <span>Acepto la <a href="politica.html" target="_blank" rel="noopener" style="color:var(--terracota);text-decoration:underline">política de tratamiento de datos</a> (Ley 1581 de 2012).</span>
+        <span>Acepto recibir información, novedades y promociones del café, y el <a href="politica.html" target="_blank" rel="noopener" style="color:var(--terracota);text-decoration:underline">tratamiento de mis datos</a> (Ley 1581 de 2012).</span>
       </label>
       <p class="error-msg" id="errorDatos">Para dejarnos tus datos, marca la casilla.</p>
     </div>
@@ -475,6 +480,7 @@
           }
           answers[group.dataset.q] = [...group.querySelectorAll('.option-btn.selected')].map(b => b.dataset.val);
         }
+        clearInvalid(group.dataset.q);
       });
     });
   });
@@ -486,6 +492,7 @@
       document.querySelectorAll(`.scale-btn[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       answers[q] = btn.dataset.val;
+      clearInvalid(q);
     });
   });
 
@@ -502,11 +509,62 @@
     else document.querySelector('.progress-wrap').style.display = 'none';
   }
 
-  function nextSection(current) { showSection(current + 1); }
+  // ── Validación: preguntas obligatorias (las de texto libre son opcionales) ──
+  const OPCIONALES = new Set(['q5', 'q14']);
+
+  function isAnswered(q) {
+    const v = answers[q];
+    if (Array.isArray(v)) return v.length > 0;
+    return v != null && String(v).trim() !== '';
+  }
+  function questionEl(q) {
+    const el = document.querySelector(`[data-q="${q}"]`);
+    return el ? el.closest('.question') : null;
+  }
+  function markInvalid(q) {
+    const qEl = questionEl(q);
+    if (!qEl) return;
+    qEl.classList.add('q-invalid');
+    if (!qEl.querySelector('.q-error')) {
+      const m = document.createElement('div');
+      m.className = 'q-error';
+      m.textContent = 'Responde esta pregunta para continuar.';
+      qEl.appendChild(m);
+    }
+  }
+  function clearInvalid(q) {
+    const qEl = questionEl(q);
+    if (!qEl) return;
+    qEl.classList.remove('q-invalid');
+    const m = qEl.querySelector('.q-error');
+    if (m) m.remove();
+  }
+  function validateSection(n) {
+    const sec = document.getElementById('s' + n);
+    if (!sec) return true;
+    const reqs = [...new Set([...sec.querySelectorAll('[data-q]')].map(e => e.dataset.q))]
+      .filter(q => !OPCIONALES.has(q));
+    let primeraFalta = null;
+    reqs.forEach(q => {
+      if (isAnswered(q)) { clearInvalid(q); }
+      else { markInvalid(q); if (!primeraFalta) primeraFalta = q; }
+    });
+    if (primeraFalta) {
+      const qEl = questionEl(primeraFalta);
+      if (qEl) qEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return false;
+    }
+    return true;
+  }
+
+  function nextSection(current) { if (validateSection(current)) showSection(current + 1); }
   function prevSection(current) { showSection(current - 1); }
 
   async function submitForm() {
-    // Validar checkbox de datos personales
+    // 1) Preguntas obligatorias de la última sección (q13)
+    if (!validateSection(5)) return;
+
+    // 2) Consentimiento (solo se exige si la persona dejó datos)
     const check = document.getElementById('checkDatos');
     const errorDatos = document.getElementById('errorDatos');
 
