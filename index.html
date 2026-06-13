@@ -354,26 +354,12 @@
         <input type="text" id="inputTel" placeholder="Tu WhatsApp (opcional)">
       </div>
 
-      <!-- TRATAMIENTO DE DATOS (compacto: check + política plegable) -->
+      <!-- TRATAMIENTO DE DATOS (mínimo: 1 línea + política en página aparte) -->
       <label class="checkbox-row" id="checkboxRow" style="margin-top:4px">
         <input type="checkbox" id="checkDatos">
-        <span>Si dejas tus datos arriba, autorizas su <strong>tratamiento</strong> para que te contactemos sobre la apertura (Ley 1581 de 2012). <a href="#politicaBox" onclick="document.getElementById('politicaBox').open=true" style="color:var(--terracota)">Ver política</a></span>
+        <span>Acepto la <a href="politica.html" target="_blank" rel="noopener" style="color:var(--terracota);text-decoration:underline">política de tratamiento de datos</a> (Ley 1581 de 2012).</span>
       </label>
-      <details id="politicaBox" style="margin-top:8px">
-        <summary style="font-size:12px;color:var(--texto-suave);cursor:pointer;user-select:none">Política de tratamiento de datos</summary>
-        <div class="datos-box" style="margin-top:8px">
-          <p>De conformidad con la <strong>Ley 1581 de 2012</strong> y el Decreto 1377 de 2013, tus datos se tratan así:</p>
-          <ul>
-            <li><strong>Responsable:</strong> Café de Origen Barranquilla (en proceso de constitución).</li>
-            <li><strong>Finalidad:</strong> investigación de mercado y contacto previo a la apertura.</li>
-            <li><strong>Datos:</strong> nombre, correo, WhatsApp y respuestas del formulario.</li>
-            <li><strong>Uso:</strong> no se venden ni se comparten con terceros; solo para avisarte de la apertura y novedades.</li>
-            <li><strong>Derechos:</strong> puedes conocer, actualizar, rectificar o eliminar tus datos escribiendo a nuestro correo de contacto.</li>
-            <li><strong>Conservación:</strong> hasta que solicites su eliminación o mientras dure la finalidad.</li>
-          </ul>
-        </div>
-      </details>
-      <p class="error-msg" id="errorDatos">Para dejarnos tus datos, marca la casilla de autorización.</p>
+      <p class="error-msg" id="errorDatos">Para dejarnos tus datos, marca la casilla.</p>
     </div>
 
     <div class="nav-row">
