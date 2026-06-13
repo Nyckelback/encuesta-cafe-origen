@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Café de Origen · Barranquilla</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --verde: #1C3A2B; --verde-medio: #2D5A3D;
+    --crema: #F2E8D5; --crema-clara: #FAF7F2;
+    --terracota: #C4724A; --cafe: #8B6F52; --cafe-claro: #B8956A;
+    --texto: #2A1F14; --texto-suave: #6B5744;
+    --error: #C0392B;
+  }
+  body { background: var(--crema-clara); color: var(--texto); font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+
+  /* HERO */
+  .hero { background: var(--verde); padding: 60px 24px 80px; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 50% 120%, #2D5A3D 0%, transparent 70%); }
+  .cup-container { position: relative; display: inline-block; margin-bottom: 32px; }
+  .cup-svg { width: 80px; height: 80px; filter: drop-shadow(0 4px 20px rgba(196,114,74,0.4)); }
+  .steam { position:absolute; top:-18px; left:50%; transform:translateX(-50%); display:flex; gap:6px; }
+  .steam span { display:block; width:3px; height:20px; background:linear-gradient(to top,rgba(242,232,213,0.6),transparent); border-radius:4px; animation:steam 2s ease-in-out infinite; }
+  .steam span:nth-child(2){animation-delay:0.4s;height:14px;} .steam span:nth-child(3){animation-delay:0.8s;}
+  @keyframes steam { 0%,100%{opacity:0;transform:translateY(0) scaleX(1)} 50%{opacity:1;transform:translateY(-8px) scaleX(1.2)} }
+  .hero-eyebrow { font-size:11px; font-weight:500; letter-spacing:0.2em; text-transform:uppercase; color:var(--cafe-claro); margin-bottom:16px; position:relative; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(28px,5vw,44px); font-weight:400; color:var(--crema); line-height:1.2; max-width:560px; margin:0 auto 16px; position:relative; }
+  .hero h1 em { font-style:italic; color:var(--cafe-claro); }
+  .hero p { font-size:15px; color:rgba(242,232,213,0.7); max-width:420px; margin:0 auto; line-height:1.6; position:relative; }
+
+  /* PROGRESS */
+  .progress-wrap { background:var(--verde); padding:0 24px 28px; display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .beans-row { display:flex; gap:8px; justify-content:center; }
+  .bean { width:12px; height:18px; border-radius:50% 50% 50% 50%/60% 60% 40% 40%; background:rgba(242,232,213,0.2); transition:background 0.4s ease,transform 0.3s ease; position:relative; }
+  .bean::after { content:''; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:1px; height:60%; background:rgba(242,232,213,0.15); border-radius:2px; }
+  .bean.filled { background:var(--terracota); transform:scale(1.1); }
+  .bean.filled::after { background:rgba(255,255,255,0.2); }
+  .progress-label { font-size:11px; color:rgba(242,232,213,0.5); letter-spacing:0.1em; text-transform:uppercase; }
+
+  /* SECTIONS */
+  .form-container { max-width:640px; margin:0 auto; padding:40px 24px 80px; }
+  .section { display:none; animation:fadeUp 0.4s ease forwards; }
+  .section.active { display:block; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+  .section-tag { display:inline-block; font-size:10px; font-weight:500; letter-spacing:0.18em; text-transform:uppercase; color:var(--terracota); margin-bottom:8px; }
+  .section-title { font-family:'Playfair Display',serif; font-size:clamp(20px,3.5vw,26px); font-weight:600; color:var(--verde); line-height:1.3; margin-bottom:8px; }
+  .section-subtitle { font-size:14px; color:var(--texto-suave); line-height:1.6; margin-bottom:32px; }
+
+  /* QUESTIONS */
+  .question { margin-bottom:28px; }
+  .question label { display:block; font-size:14px; font-weight:500; color:var(--texto); margin-bottom:12px; line-height:1.5; }
+  .question label .q-num { color:var(--terracota); font-weight:400; margin-right:4px; }
+
+  /* OPTIONS */
+  .options { display:flex; flex-wrap:wrap; gap:8px; }
+  .option-btn { padding:10px 18px; border:1.5px solid rgba(139,111,82,0.3); border-radius:100px; background:white; color:var(--texto-suave); font-family:'Inter',sans-serif; font-size:13px; cursor:pointer; transition:all 0.2s; user-select:none; }
+  .option-btn:hover { border-color:var(--terracota); color:var(--terracota); background:#FDF5EF; }
+  .option-btn.selected { background:var(--verde); border-color:var(--verde); color:var(--crema); }
+  .option-btn.disabled { opacity:0.4; cursor:not-allowed; }
+  .options-hint { font-size:11px; color:var(--texto-suave); margin-bottom:10px; font-style:italic; }
+
+  /* SCALE */
+  .scale-wrap { display:flex; flex-direction:column; gap:8px; }
+  .scale-row { display:flex; gap:8px; align-items:center; }
+  .scale-btn { width:44px; height:44px; border:1.5px solid rgba(139,111,82,0.25); border-radius:10px; background:white; color:var(--texto-suave); font-family:'Inter',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s; flex-shrink:0; }
+  .scale-btn:hover{border-color:var(--terracota);color:var(--terracota);}
+  .scale-btn.selected{background:var(--verde);border-color:var(--verde);color:var(--crema);}
+  .scale-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--texto-suave); padding:0 2px; }
+
+  /* INPUTS */
+  textarea { width:100%; padding:14px 16px; border:1.5px solid rgba(139,111,82,0.25); border-radius:12px; background:white; color:var(--texto); font-family:'Inter',sans-serif; font-size:14px; line-height:1.6; resize:vertical; min-height:100px; transition:border-color 0.2s; outline:none; }
+  textarea:focus { border-color:var(--verde-medio); }
+  textarea::placeholder { color:rgba(107,87,68,0.4); }
+  input[type="text"], input[type="email"] { width:100%; padding:13px 16px; border:1.5px solid rgba(139,111,82,0.25); border-radius:12px; background:white; color:var(--texto); font-family:'Inter',sans-serif; font-size:14px; transition:border-color 0.2s; outline:none; }
+  input[type="text"]:focus, input[type="email"]:focus { border-color:var(--verde-medio); }
+  input.error-field { border-color: var(--error) !important; }
+
+  /* DIVIDER */
+  .divider { height:1px; background:linear-gradient(to right,transparent,rgba(139,111,82,0.2),transparent); margin:36px 0; }
+
+  /* TRATAMIENTO DATOS */
+  .datos-box { background:white; border:1.5px solid rgba(139,111,82,0.2); border-radius:16px; padding:20px; margin-top:8px; }
+  .datos-box h4 { font-family:'Playfair Display',serif; font-size:15px; color:var(--verde); margin-bottom:8px; }
+  .datos-box p { font-size:12px; color:var(--texto-suave); line-height:1.7; margin-bottom:16px; }
+  .datos-box ul { font-size:12px; color:var(--texto-suave); line-height:1.7; padding-left:16px; margin-bottom:16px; }
+  .checkbox-row { display:flex; align-items:flex-start; gap:12px; cursor:pointer; }
+  .checkbox-row input[type="checkbox"] { width:18px; height:18px; min-width:18px; margin-top:2px; accent-color:var(--verde); cursor:pointer; }
+  .checkbox-row span { font-size:13px; color:var(--texto); line-height:1.5; }
+  .checkbox-row span strong { color:var(--verde); }
+  .error-msg { font-size:12px; color:var(--error); margin-top:8px; display:none; }
+  .error-msg.visible { display:block; }
+
+  /* NAV */
+  .nav-row { display:flex; justify-content:space-between; align-items:center; margin-top:40px; gap:12px; }
+  .btn-back { padding:12px 24px; border:1.5px solid rgba(139,111,82,0.3); border-radius:100px; background:transparent; color:var(--texto-suave); font-family:'Inter',sans-serif; font-size:14px; cursor:pointer; transition:all 0.2s; }
+  .btn-back:hover{border-color:var(--cafe);color:var(--cafe);}
+  .btn-next { padding:14px 32px; background:var(--verde); border:none; border-radius:100px; color:var(--crema); font-family:'Inter',sans-serif; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .btn-next:hover{background:var(--verde-medio);transform:translateY(-1px);}
+  .btn-next:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+  .btn-next svg{transition:transform 0.2s;}
+  .btn-next:hover svg{transform:translateX(3px);}
+
+  /* SAVING INDICATOR */
+  .saving-msg { text-align:center; font-size:13px; color:var(--texto-suave); margin-top:16px; display:none; }
+  .saving-msg.visible { display:block; }
+
+  /* THANK YOU */
+  .thankyou { text-align:center; padding:60px 24px; }
+  .thankyou-icon { font-size:56px; margin-bottom:24px; display:block; animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards; }
+  @keyframes popIn { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+  .thankyou h2 { font-family:'Playfair Display',serif; font-size:28px; color:var(--verde); margin-bottom:12px; }
+  .thankyou p { font-size:15px; color:var(--texto-suave); line-height:1.6; max-width:380px; margin:0 auto 8px; }
+  .thankyou .resp-id { font-size:11px; color:var(--cafe); margin-top:12px; letter-spacing:0.05em; }
+
+  @media(max-width:480px){.scale-btn{width:38px;height:38px;font-size:13px;}.option-btn{font-size:12px;padding:9px 14px;}}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="cup-container">
+    <div class="steam"><span></span><span></span><span></span></div>
+    <svg class="cup-svg" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="40" cy="30" rx="26" ry="8" fill="#C4724A" opacity="0.3"/>
+      <path d="M14 32 L18 68 Q18 72 22 72 L58 72 Q62 72 62 68 L66 32 Z" fill="#F2E8D5" opacity="0.15"/>
+      <path d="M14 32 L18 68 Q18 72 22 72 L58 72 Q62 72 62 68 L66 32 Z" stroke="#F2E8D5" stroke-width="1.5" fill="none" opacity="0.5"/>
+      <path d="M66 38 Q78 38 78 50 Q78 62 66 62" stroke="#F2E8D5" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.5"/>
+      <ellipse cx="40" cy="32" rx="26" ry="7" fill="#C4724A" opacity="0.6"/>
+      <ellipse cx="40" cy="32" rx="20" ry="5" fill="#8B4513" opacity="0.5"/>
+    </svg>
+  </div>
+  <p class="hero-eyebrow">Barranquilla · Investigación de cultura cafetera</p>
+  <h1>¿Qué tan cerca estás del <em>café de origen?</em></h1>
+  <p>Queremos conocer tu relación con el café antes de abrir algo diferente en la ciudad. Solo toma 3 minutos.</p>
+</div>
+
+<!-- PROGRESS BEANS -->
+<div class="progress-wrap">
+  <div class="beans-row" id="beansRow"></div>
+  <div class="progress-label" id="progressLabel">Sección 1 de 5</div>
+</div>
+
+<!-- FORM -->
+<div class="form-container">
+
+  <!-- S1: Hábitos -->
+  <div class="section active" id="s1">
+    <span class="section-tag">Hábitos diarios</span>
+    <h2 class="section-title">Tu relación cotidiana con el café</h2>
+    <p class="section-subtitle">No hay respuestas buenas ni malas — solo queremos entender cómo vives el café hoy.</p>
+
+    <div class="question">
+      <label><span class="q-num">01.</span> ¿Cuántas veces al día tomas café?</label>
+      <div class="options" data-q="q1" data-type="single">
+        <button class="option-btn" data-val="Una vez">Una vez</button>
+        <button class="option-btn" data-val="Dos veces">Dos veces</button>
+        <button class="option-btn" data-val="Tres o más">Tres o más</button>
+        <button class="option-btn" data-val="Casi nunca">Casi nunca</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">02.</span> ¿Dónde sueles tomar café normalmente? <small style="color:var(--texto-suave);font-weight:300">(Todas las que apliquen)</small></label>
+      <div class="options" data-q="q2" data-type="multi">
+        <button class="option-btn" data-val="En casa">En casa</button>
+        <button class="option-btn" data-val="En el trabajo">En el trabajo</button>
+        <button class="option-btn" data-val="Cafeterías de cadena">Cafeterías de cadena</button>
+        <button class="option-btn" data-val="Cafeterías independientes">Cafeterías independientes</button>
+        <button class="option-btn" data-val="Restaurantes">Restaurantes</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">03.</span> ¿Cómo prefieres tu café? <small style="color:var(--texto-suave);font-weight:300">(Elige máximo 2)</small></label>
+      <p class="options-hint">Selecciona tus 2 favoritas para ayudarnos a entender tu perfil.</p>
+      <div class="options" data-q="q3" data-type="multi" data-max="2">
+        <button class="option-btn" data-val="Negro / americano">Negro / americano</button>
+        <button class="option-btn" data-val="Con leche">Con leche</button>
+        <button class="option-btn" data-val="Frío / helado">Frío / helado</button>
+        <button class="option-btn" data-val="Dulce">Dulce</button>
+        <button class="option-btn" data-val="Depende del momento">Depende del momento</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-next" onclick="nextSection(1)">Siguiente <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- S2: Conocimiento -->
+  <div class="section" id="s2">
+    <span class="section-tag">Cultura cafetera</span>
+    <h2 class="section-title">¿Qué tanto sabes del café?</h2>
+    <p class="section-subtitle">Cuéntanos qué has escuchado y qué significa para ti.</p>
+
+    <div class="question">
+      <label><span class="q-num">04.</span> ¿Has escuchado el término "café de especialidad"?</label>
+      <div class="options" data-q="q4" data-type="single">
+        <button class="option-btn" data-val="Sí, sé exactamente qué es">Sí, sé exactamente qué es</button>
+        <button class="option-btn" data-val="Lo he escuchado pero no tengo claro">Lo he escuchado pero no tengo claro</button>
+        <button class="option-btn" data-val="No lo había escuchado">No lo había escuchado</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">05.</span> Cuando escuchas "café de origen", ¿qué imaginas?</label>
+      <textarea data-q="q5" placeholder="Escribe lo primero que se te venga a la mente..."></textarea>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">06.</span> ¿Conoces o has probado alguno de estos métodos? <small style="color:var(--texto-suave);font-weight:300">(Todos los que apliquen)</small></label>
+      <div class="options" data-q="q6" data-type="multi">
+        <button class="option-btn" data-val="Espresso">Espresso</button>
+        <button class="option-btn" data-val="V60">V60 (filtrado)</button>
+        <button class="option-btn" data-val="Prensa francesa">Prensa francesa</button>
+        <button class="option-btn" data-val="Cold brew">Cold brew</button>
+        <button class="option-btn" data-val="Aeropress">Aeropress</button>
+        <button class="option-btn" data-val="Chemex">Chemex</button>
+        <button class="option-btn" data-val="Ninguno">Ninguno de estos</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevSection(2)">← Atrás</button>
+      <button class="btn-next" onclick="nextSection(2)">Siguiente <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- S3: Experiencia -->
+  <div class="section" id="s3">
+    <span class="section-tag">Experiencia y expectativas</span>
+    <h2 class="section-title">¿Qué buscas cuando vas a una cafetería?</h2>
+    <p class="section-subtitle">Más allá del café, ¿qué hace que un lugar valga la pena?</p>
+
+    <div class="question">
+      <label><span class="q-num">07.</span> ¿Qué tan importante es para ti que te expliquen el origen del café?</label>
+      <div class="scale-wrap">
+        <div class="scale-row">
+          <button class="scale-btn" data-q="q7" data-val="1">1</button>
+          <button class="scale-btn" data-q="q7" data-val="2">2</button>
+          <button class="scale-btn" data-q="q7" data-val="3">3</button>
+          <button class="scale-btn" data-q="q7" data-val="4">4</button>
+          <button class="scale-btn" data-q="q7" data-val="5">5</button>
+        </div>
+        <div class="scale-labels"><span>No me importa</span><span>Me encantaría</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">08.</span> ¿Qué es lo que más valoras al visitar una cafetería? <small style="color:var(--texto-suave);font-weight:300">(Elige máximo 2 prioridades)</small></label>
+      <p class="options-hint">Limitar a 2 nos ayuda a entender qué importa más, no todo lo que gusta.</p>
+      <div class="options" data-q="q8" data-type="multi" data-max="2">
+        <button class="option-btn" data-val="Calidad del café">La calidad del café</button>
+        <button class="option-btn" data-val="Ambiente">El ambiente y decoración</button>
+        <button class="option-btn" data-val="Atención">La atención del personal</button>
+        <button class="option-btn" data-val="Postres y comida">Los postres y comida</button>
+        <button class="option-btn" data-val="Historia del café">La historia detrás del café</button>
+        <button class="option-btn" data-val="Wifi y trabajo">Wifi y espacio para trabajar</button>
+        <button class="option-btn" data-val="Precio">El precio</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">09.</span> ¿Asistirías a un taller o cata de café para aprender a diferenciar sabores y orígenes?</label>
+      <div class="options" data-q="q9" data-type="single">
+        <button class="option-btn" data-val="Sí, definitivamente">Sí, definitivamente</button>
+        <button class="option-btn" data-val="Quizás, según el costo">Quizás, según el costo</button>
+        <button class="option-btn" data-val="Probablemente no">Probablemente no</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevSection(3)">← Atrás</button>
+      <button class="btn-next" onclick="nextSection(3)">Siguiente <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- S4: Valor -->
+  <div class="section" id="s4">
+    <span class="section-tag">Percepción de valor</span>
+    <h2 class="section-title">El precio de una buena taza</h2>
+    <p class="section-subtitle">Sin compromiso — solo queremos entender qué percepción tienes del valor del café especial.</p>
+
+    <div class="question">
+      <label><span class="q-num">10.</span> ¿Cuánto pagas normalmente por un café?</label>
+      <div class="options" data-q="q10" data-type="single">
+        <button class="option-btn" data-val="Menos de $5.000">Menos de $5.000</button>
+        <button class="option-btn" data-val="$5.000 - $9.000">$5.000 – $9.000</button>
+        <button class="option-btn" data-val="$10.000 - $14.000">$10.000 – $14.000</button>
+        <button class="option-btn" data-val="Más de $15.000">Más de $15.000</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">11.</span> Si supieras que el café fue cultivado en una finca específica de Colombia, procesado artesanalmente y preparado con técnica especializada — ¿cuánto estarías dispuesto/a a pagar?</label>
+      <div class="options" data-q="q11" data-type="single">
+        <button class="option-btn" data-val="Lo mismo de siempre">Lo mismo de siempre</button>
+        <button class="option-btn" data-val="Hasta $12.000">Hasta $12.000</button>
+        <button class="option-btn" data-val="Hasta $18.000">Hasta $18.000</button>
+        <button class="option-btn" data-val="Más de $18.000 si vale la pena">Más de $18.000 si la experiencia lo justifica</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">12.</span> ¿Con qué frecuencia visitarías una cafetería de especialidad si hubiera una cerca?</label>
+      <div class="options" data-q="q12" data-type="single">
+        <button class="option-btn" data-val="Todos los días">Todos los días</button>
+        <button class="option-btn" data-val="Varias veces a la semana">Varias veces a la semana</button>
+        <button class="option-btn" data-val="Los fines de semana">Los fines de semana</button>
+        <button class="option-btn" data-val="Ocasionalmente">Ocasionalmente</button>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevSection(4)">← Atrás</button>
+      <button class="btn-next" onclick="nextSection(4)">Siguiente <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <!-- S5: Final + Datos personales -->
+  <div class="section" id="s5">
+    <span class="section-tag">Para cerrar</span>
+    <h2 class="section-title">Una última vuelta al molino</h2>
+    <p class="section-subtitle">Cuéntanos dónde estás y, si quieres, déjanos tu contacto para avisarte cuando abramos.</p>
+
+    <div class="question">
+      <label><span class="q-num">13.</span> ¿En qué zona de Barranquilla vives o te mueves más? <small style="color:var(--texto-suave);font-weight:300">(Todas las que apliquen)</small></label>
+      <div class="options" data-q="q13" data-type="multi">
+        <button class="option-btn" data-val="Zona Norte">Zona Norte</button>
+        <button class="option-btn" data-val="El Prado / Altos">El Prado / Altos</button>
+        <button class="option-btn" data-val="Ciudad Jardín">Ciudad Jardín</button>
+        <button class="option-btn" data-val="Centro">Centro</button>
+        <button class="option-btn" data-val="Suroccidente">Suroccidente</button>
+        <button class="option-btn" data-val="Soledad / Malambo">Soledad / Malambo</button>
+      </div>
+    </div>
+
+    <div class="question">
+      <label><span class="q-num">14.</span> ¿Hay algo que siempre quisiste encontrar en una cafetería en Barranquilla y nunca has encontrado?</label>
+      <textarea data-q="q14" placeholder="Tu respuesta aquí... (opcional)"></textarea>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DATOS PERSONALES OPCIONALES -->
+    <div class="question">
+      <label>¿Quieres ser de los primeros en saber cuándo abrimos? <small style="color:var(--texto-suave);font-weight:300">(Opcional)</small></label>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+        <input type="text" id="inputNombre" placeholder="Tu nombre">
+        <input type="email" id="inputEmail" placeholder="Tu correo electrónico">
+        <input type="text" id="inputTel" placeholder="Tu WhatsApp (opcional)">
+      </div>
+
+      <!-- TRATAMIENTO DE DATOS PERSONALES -->
+      <div class="datos-box">
+        <h4>Tratamiento de datos personales</h4>
+        <p>De conformidad con la <strong>Ley 1581 de 2012</strong> y el Decreto 1377 de 2013, te informamos que los datos personales que compartas en este formulario serán tratados bajo las siguientes condiciones:</p>
+        <ul>
+          <li><strong>Responsable:</strong> Café de Origen Barranquilla (en proceso de constitución)</li>
+          <li><strong>Finalidad:</strong> Investigación de mercado, análisis de preferencias de consumo y contacto previo a la apertura del establecimiento.</li>
+          <li><strong>Datos recopilados:</strong> Nombre, correo electrónico, número de WhatsApp y respuestas al formulario.</li>
+          <li><strong>Uso:</strong> Tus datos no serán vendidos, cedidos ni compartidos con terceros. Solo se usarán para informarte sobre la apertura y novedades del café.</li>
+          <li><strong>Derechos:</strong> Puedes conocer, actualizar, rectificar o solicitar la eliminación de tus datos escribiendo a nuestro correo de contacto.</li>
+          <li><strong>Conservación:</strong> Los datos se conservarán hasta que solicites su eliminación o por el tiempo necesario para la finalidad indicada.</li>
+        </ul>
+        <label class="checkbox-row" id="checkboxRow">
+          <input type="checkbox" id="checkDatos">
+          <span>Acepto el tratamiento de mis datos personales conforme a lo descrito y autorizo a <strong>Café de Origen Barranquilla</strong> a contactarme con información relacionada con la apertura del establecimiento.</span>
+        </label>
+        <p class="error-msg" id="errorDatos">Debes aceptar el tratamiento de datos para continuar.</p>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn-back" onclick="prevSection(5)">← Atrás</button>
+      <button class="btn-next" id="btnEnviar" onclick="submitForm()" style="background:var(--terracota)">
+        Enviar respuestas
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l5 5L14 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <p class="saving-msg" id="savingMsg">⏳ Guardando tus respuestas...</p>
+  </div>
+
+  <!-- GRACIAS -->
+  <div class="section" id="s6">
+    <div class="thankyou">
+      <span class="thankyou-icon">☕</span>
+      <h2>¡Gracias por tu tiempo!</h2>
+      <p>Tus respuestas nos ayudan a entender mejor a los barranquilleros que aman — o están a punto de amar — el café de verdad.</p>
+      <p>Cuando abramos, serás de los primeros en saberlo.</p>
+      <p class="resp-id" id="respId"></p>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ─────────────────────────────────────────────────────────────
+  // CONFIGURACIÓN FIREBASE
+  // Reemplaza estos valores con los de tu proyecto en Firebase Console
+  // ─────────────────────────────────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyAUUFoU9GrgPAml2Z8kEDJm5lZw0eP8C_s",
+    authDomain: "cafe-origen-b2d5a.firebaseapp.com",
+    projectId: "cafe-origen-b2d5a",
+    storageBucket: "cafe-origen-b2d5a.firebasestorage.app",
+    messagingSenderId: "932710912163",
+    appId: "1:932710912163:web:49d65962d8ebedf7f06f16"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Exponemos saveToFirebase globalmente
+  window.saveToFirebase = async function(data) {
+    try {
+      const docRef = await addDoc(collection(db, "encuestas"), {
+        ...data,
+        timestamp: serverTimestamp()
+      });
+      return docRef.id;
+    } catch (e) {
+      console.error("Error guardando en Firebase:", e);
+      return null;
+    }
+  };
+</script>
+
+<script>
+  const TOTAL = 5;
+  let answers = {};
+
+  // Granos de progreso
+  const beansRow = document.getElementById('beansRow');
+  for (let i = 1; i <= TOTAL; i++) {
+    const b = document.createElement('div');
+    b.className = 'bean' + (i === 1 ? ' filled' : '');
+    b.id = 'bean' + i;
+    beansRow.appendChild(b);
+  }
+
+  function updateProgress(current) {
+    for (let i = 1; i <= TOTAL; i++) {
+      document.getElementById('bean' + i).className = 'bean' + (i <= current ? ' filled' : '');
+    }
+    document.getElementById('progressLabel').textContent =
+      current <= TOTAL ? `Sección ${current} de ${TOTAL}` : 'Completado';
+  }
+
+  // Botones de opción
+  document.querySelectorAll('.options').forEach(group => {
+    const type = group.dataset.type;
+    const max = group.dataset.max ? parseInt(group.dataset.max) : null;
+
+    group.querySelectorAll('.option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (type === 'single') {
+          group.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+          btn.classList.add('selected');
+          answers[group.dataset.q] = btn.dataset.val;
+        } else {
+          if (btn.classList.contains('selected')) {
+            btn.classList.remove('selected');
+          } else {
+            const sel = group.querySelectorAll('.option-btn.selected');
+            if (!max || sel.length < max) {
+              btn.classList.add('selected');
+            }
+          }
+          // Deshabilitar visualmente los que no se pueden elegir
+          if (max) {
+            const sel = group.querySelectorAll('.option-btn.selected');
+            group.querySelectorAll('.option-btn').forEach(b => {
+              if (!b.classList.contains('selected') && sel.length >= max) {
+                b.classList.add('disabled');
+              } else {
+                b.classList.remove('disabled');
+              }
+            });
+          }
+          answers[group.dataset.q] = [...group.querySelectorAll('.option-btn.selected')].map(b => b.dataset.val);
+        }
+      });
+    });
+  });
+
+  // Escala
+  document.querySelectorAll('.scale-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.dataset.q;
+      document.querySelectorAll(`.scale-btn[data-q="${q}"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      answers[q] = btn.dataset.val;
+    });
+  });
+
+  // Textareas
+  document.querySelectorAll('textarea').forEach(el => {
+    el.addEventListener('input', () => { answers[el.dataset.q] = el.value; });
+  });
+
+  function showSection(n) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (n <= TOTAL) updateProgress(n);
+    else document.querySelector('.progress-wrap').style.display = 'none';
+  }
+
+  function nextSection(current) { showSection(current + 1); }
+  function prevSection(current) { showSection(current - 1); }
+
+  async function submitForm() {
+    // Validar checkbox de datos personales
+    const check = document.getElementById('checkDatos');
+    const errorDatos = document.getElementById('errorDatos');
+
+    if (!check.checked) {
+      errorDatos.classList.add('visible');
+      check.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    errorDatos.classList.remove('visible');
+
+    // Recoger datos de contacto
+    const nombre = document.getElementById('inputNombre').value.trim();
+    const email = document.getElementById('inputEmail').value.trim();
+    const tel = document.getElementById('inputTel').value.trim();
+
+    const payload = {
+      ...answers,
+      contacto: {
+        nombre: nombre || null,
+        email: email || null,
+        whatsapp: tel || null,
+        aceptoTratamientoDatos: true,
+        fechaAceptacion: new Date().toISOString()
+      },
+      metadata: {
+        userAgent: navigator.userAgent,
+        idioma: navigator.language,
+        fechaHora: new Date().toISOString()
+      }
+    };
+
+    // Mostrar loader
+    const btnEnviar = document.getElementById('btnEnviar');
+    const savingMsg = document.getElementById('savingMsg');
+    btnEnviar.disabled = true;
+    savingMsg.classList.add('visible');
+
+    // Guardar en Firebase
+    let docId = null;
+    if (window.saveToFirebase) {
+      docId = await window.saveToFirebase(payload);
+    }
+
+    // Mostrar pantalla de gracias
+    showSection(6);
+    document.querySelector('.hero').style.display = 'none';
+    if (docId) {
+      document.getElementById('respId').textContent = `ID de respuesta: ${docId}`;
+    }
+  }
+
+  // Exponer funciones globalmente
+  window.nextSection = nextSection;
+  window.prevSection = prevSection;
+  window.submitForm = submitForm;
+</script>
+</body>
+</html>

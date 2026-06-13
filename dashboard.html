@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Café · Panel de resultados</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  :root{
+    --verde:#1C3A2B;--verde-medio:#2D5A3D;
+    --crema:#F2E8D5;--crema-clara:#FAF7F2;
+    --terracota:#C4724A;--cafe:#8B6F52;--cafe-claro:#B8956A;
+    --texto:#2A1F14;--texto-suave:#6B5744;
+    --error:#C0392B;--ok:#2D5A3D;
+    --linea:rgba(139,111,82,0.18);
+  }
+  body{background:var(--crema-clara);color:var(--texto);font-family:'Inter',sans-serif;min-height:100vh;}
+
+  /* GATE */
+  .gate{position:fixed;inset:0;background:var(--verde);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;}
+  .gate h1{font-family:'Playfair Display',serif;color:var(--crema);font-weight:400;font-size:26px;}
+  .gate p{color:rgba(242,232,213,0.7);font-size:13px;max-width:320px;text-align:center;line-height:1.6;}
+  .gate input{padding:13px 16px;border-radius:12px;border:1.5px solid rgba(242,232,213,0.3);background:rgba(255,255,255,0.06);color:var(--crema);font-family:'Inter';font-size:14px;width:260px;text-align:center;outline:none;}
+  .gate input::placeholder{color:rgba(242,232,213,0.4);}
+  .gate button{padding:13px 30px;border:none;border-radius:100px;background:var(--terracota);color:white;font-family:'Inter';font-size:14px;font-weight:500;cursor:pointer;}
+  .gate .gate-err{color:#E8A87C;font-size:12px;min-height:16px;}
+
+  /* LAYOUT */
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+  .brand{display:flex;flex-direction:column;gap:2px;}
+  .brand .eyebrow{font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--terracota);font-weight:600;}
+  .brand h1{font-family:'Playfair Display',serif;font-weight:600;font-size:30px;color:var(--verde);line-height:1.1;}
+  .brand h1 em{font-style:italic;color:var(--cafe);}
+  .live{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--texto-suave);}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(45,90,61,0.5);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(45,90,61,0.5)}70%{box-shadow:0 0 0 8px rgba(45,90,61,0)}100%{box-shadow:0 0 0 0 rgba(45,90,61,0)}}
+
+  /* SECURITY BANNER */
+  .sec-banner{background:#FBEEE6;border:1.5px solid rgba(196,114,74,0.4);border-left:4px solid var(--terracota);border-radius:12px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:var(--texto);line-height:1.6;}
+  .sec-banner strong{color:var(--terracota);}
+  .sec-banner code{background:rgba(139,111,82,0.12);padding:1px 6px;border-radius:5px;font-size:12px;}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:14px;}
+  .stat{background:white;border:1px solid var(--linea);border-radius:16px;padding:18px 20px;}
+  .stat .n{font-family:'Playfair Display',serif;font-size:34px;color:var(--verde);line-height:1;}
+  .stat .l{font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:var(--texto-suave);margin-top:8px;}
+
+  /* TOOLBAR */
+  .toolbar{display:flex;justify-content:flex-end;gap:10px;margin:6px 0 22px;}
+  .btn{padding:10px 18px;border:1.5px solid var(--verde);border-radius:100px;background:var(--verde);color:var(--crema);font-family:'Inter';font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;}
+  .btn:hover{background:var(--verde-medio);}
+  .btn.ghost{background:transparent;color:var(--verde);}
+  .btn.ghost:hover{background:#EFE9DD;}
+
+  /* GRID OF CARDS */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;}
+  .card{background:white;border:1px solid var(--linea);border-radius:18px;padding:18px 18px 14px;display:flex;flex-direction:column;}
+  .card.wide{grid-column:1/-1;}
+  .card h3{font-size:13px;font-weight:600;color:var(--verde);margin-bottom:4px;line-height:1.4;}
+  .card .sub{font-size:11px;color:var(--texto-suave);margin-bottom:12px;}
+  .chart-box{position:relative;height:230px;}
+  .empty{color:var(--texto-suave);font-size:13px;font-style:italic;padding:30px 0;text-align:center;}
+
+  /* TEXT LISTS */
+  .txt-list{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px;}
+  .txt-item{background:var(--crema-clara);border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.5;color:var(--texto);border-left:3px solid var(--cafe-claro);}
+
+  /* TABLE */
+  .tbl-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--texto-suave);font-weight:600;padding:8px 10px;border-bottom:1.5px solid var(--linea);}
+  td{padding:9px 10px;border-bottom:1px solid var(--linea);color:var(--texto);vertical-align:top;}
+  td a{color:var(--verde-medio);text-decoration:none;}
+  tr:hover td{background:var(--crema-clara);}
+
+  /* STATE MESSAGES */
+  .state{display:none;background:white;border:1px solid var(--linea);border-radius:18px;padding:40px;text-align:center;}
+  .state.show{display:block;}
+  .state h2{font-family:'Playfair Display',serif;color:var(--verde);font-size:22px;margin-bottom:10px;}
+  .state p{color:var(--texto-suave);font-size:14px;line-height:1.7;max-width:560px;margin:0 auto 10px;}
+  .state pre{text-align:left;background:#2A1F14;color:#E8DCC8;padding:16px;border-radius:12px;font-size:12px;overflow-x:auto;margin-top:16px;line-height:1.5;}
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+
+<!-- GATE (login admin con Firebase Auth) -->
+<div class="gate" id="gate">
+  <h1>Café · Panel</h1>
+  <p>Panel de administración con datos personales. Inicia sesión con tu cuenta de admin.</p>
+  <input type="email" id="gateEmail" placeholder="Correo de admin" autocomplete="username">
+  <input type="password" id="gatePass" placeholder="Contraseña" autocomplete="current-password">
+  <button id="gateBtn">Iniciar sesión</button>
+  <div class="gate-err" id="gateErr"></div>
+</div>
+
+<div class="wrap hidden" id="app">
+  <header>
+    <div class="brand">
+      <span class="eyebrow">Investigación de mercado · Barranquilla</span>
+      <h1>Café <em>· resultados</em></h1>
+    </div>
+    <div class="live"><span class="dot"></span> En vivo desde Firestore · <span id="whoami"></span>
+      <button class="btn ghost" id="btnLogout" style="padding:4px 12px;font-size:12px;margin-left:8px">Salir</button>
+    </div>
+  </header>
+
+  <div class="sec-banner">
+    <strong>🔒 Seguridad:</strong> este panel lee <strong>datos personales reales</strong> (nombre, correo, WhatsApp)
+    y solo abre con <strong>login de admin (Firebase Auth)</strong>. Para que sea seguro de verdad, las
+    <strong>reglas de Firestore</strong> deben permitir <em>lectura solo a usuarios autenticados</em> — ver
+    <code>datos/SEGURIDAD-Y-LANZAMIENTO.md</code> y aplica <code>datos/firestore.rules</code> antes de difundir la encuesta.
+  </div>
+
+  <!-- ESTADOS -->
+  <div class="state" id="stLoading"><h2>Cargando respuestas…</h2><p>Conectando con Firestore.</p></div>
+  <div class="state" id="stDenied">
+    <h2>🔒 Lectura bloqueada por Firestore</h2>
+    <p>Firebase respondió <strong>permission-denied</strong>: las reglas actuales no permiten leer la colección
+    <code>encuestas</code>. Esto en realidad es <em>buena señal</em> para la privacidad — pero para ver el panel hay
+    que permitir lectura <strong>solo a un admin autenticado</strong>. Regla sugerida (confírmala con JP antes de aplicar):</p>
+    <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /encuestas/{doc} {
+      allow create: if true;                       // la encuesta puede enviar
+      allow read, update, delete: if request.auth != null;  // solo admin logueado
+    }
+  }
+}</pre>
+    <p style="margin-top:14px">Mientras tanto, si quieres ver datos en una prueba rápida, puedes permitir lectura
+    temporal — <strong>nunca dejes lectura abierta en producción con datos personales</strong>.</p>
+  </div>
+  <div class="state" id="stError"><h2>No se pudo conectar</h2><p id="errMsg"></p></div>
+
+  <!-- DASHBOARD -->
+  <div id="dash" class="hidden">
+    <div class="stats" id="stats"></div>
+    <div class="toolbar">
+      <button class="btn ghost" id="btnCsv">⬇ Exportar CSV</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+// apiKey web NO es secreto; la seguridad real son las reglas de Firestore + este login de admin
+const firebaseConfig = {
+  apiKey: "AIzaSyAUUFoU9GrgPAml2Z8kEDJm5lZw0eP8C_s",
+  authDomain: "cafe-origen-b2d5a.firebaseapp.com",
+  projectId: "cafe-origen-b2d5a",
+  storageBucket: "cafe-origen-b2d5a.firebasestorage.app",
+  messagingSenderId: "932710912163",
+  appId: "1:932710912163:web:49d65962d8ebedf7f06f16"
+};
+
+const QUESTIONS = [
+  {key:'q1',  label:'01 · ¿Cuántas veces al día tomas café?', type:'single', order:['Una vez','Dos veces','Tres o más','Casi nunca']},
+  {key:'q2',  label:'02 · ¿Dónde sueles tomar café?', type:'multi'},
+  {key:'q3',  label:'03 · ¿Cómo prefieres tu café? (máx 2)', type:'multi'},
+  {key:'q4',  label:'04 · ¿Has escuchado "café de especialidad"?', type:'single', order:['Sí, sé exactamente qué es','Lo he escuchado pero no tengo claro','No lo había escuchado']},
+  {key:'q5',  label:'05 · ¿Qué imaginas con "café de origen"?', type:'text'},
+  {key:'q6',  label:'06 · Métodos que conoces / has probado', type:'multi'},
+  {key:'q7',  label:'07 · Importancia de que te expliquen el origen (1–5)', type:'scale', order:['1','2','3','4','5']},
+  {key:'q8',  label:'08 · ¿Qué valoras al visitar una cafetería? (máx 2)', type:'multi'},
+  {key:'q9',  label:'09 · ¿Asistirías a un taller o cata?', type:'single', order:['Sí, definitivamente','Quizás, según el costo','Probablemente no']},
+  {key:'q10', label:'10 · ¿Cuánto pagas normalmente por un café?', type:'single', order:['Menos de $5.000','$5.000 - $9.000','$10.000 - $14.000','Más de $15.000']},
+  {key:'q11', label:'11 · ¿Cuánto pagarías por café trazable de finca?', type:'single', order:['Lo mismo de siempre','Hasta $12.000','Hasta $18.000','Más de $18.000 si vale la pena']},
+  {key:'q12', label:'12 · ¿Con qué frecuencia visitarías una de especialidad?', type:'single', order:['Todos los días','Varias veces a la semana','Los fines de semana','Ocasionalmente']},
+  {key:'q13', label:'13 · ¿En qué zona de Barranquilla te mueves?', type:'multi'},
+  {key:'q14', label:'14 · ¿Qué nunca has encontrado en una cafetería?', type:'text'},
+];
+
+const PALETTE = ['#C4724A','#2D5A3D','#B8956A','#1C3A2B','#8B6F52','#D89B6A','#6B8F5A','#A85A38','#3E6B4E','#C9A87C'];
+
+const $ = id => document.getElementById(id);
+let charts = [];
+let lastDocs = [];
+let started = false;
+
+// ── Firebase (init una sola vez) ──
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ── LOGIN admin (Firebase Auth) ──
+function doLogin(){
+  $('gateErr').textContent = 'Entrando…';
+  signInWithEmailAndPassword(auth, $('gateEmail').value.trim(), $('gatePass').value)
+    .catch(e => {
+      const bad = ['auth/invalid-credential','auth/wrong-password','auth/user-not-found','auth/invalid-email'];
+      $('gateErr').textContent = bad.includes(e.code) ? 'Correo o contraseña incorrectos.' : (e.code || e.message);
+    });
+}
+$('gateBtn').addEventListener('click', doLogin);
+['gateEmail','gatePass'].forEach(id => $(id).addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); }));
+$('btnLogout').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, user => {
+  if(user){
+    $('gate').style.display = 'none';
+    $('app').classList.remove('hidden');
+    $('whoami').textContent = user.email || 'admin';
+    if(!started){ started = true; startData(); }
+  } else {
+    $('gate').style.display = 'flex';
+    $('app').classList.add('hidden');
+    $('gatePass').value = '';
+    $('gateErr').textContent = '';
+  }
+});
+
+function showState(which){
+  ['stLoading','stDenied','stError'].forEach(id => $(id).classList.remove('show'));
+  $('dash').classList.add('hidden');
+  if(which==='dash'){ $('dash').classList.remove('hidden'); }
+  else { $(which).classList.add('show'); }
+}
+
+// ── FIRESTORE (lee como admin autenticado) ──
+function startData(){
+  showState('stLoading');
+  onSnapshot(collection(db,'encuestas'),
+    snap => { lastDocs = snap.docs.map(d => d.data()); render(lastDocs); },
+    err => {
+      if(err.code === 'permission-denied') showState('stDenied');
+      else { showState('stError'); $('errMsg').textContent = `${err.code||''} ${err.message||err}`; }
+    }
+  );
+}
+
+// ── AGREGACIÓN ──
+function aggregate(docs, key){
+  const counts = {};
+  for(const d of docs){
+    let v = d[key];
+    if(v==null || v==='') continue;
+    if(Array.isArray(v)) v.forEach(it => { if(it) counts[it]=(counts[it]||0)+1; });
+    else counts[v]=(counts[v]||0)+1;
+  }
+  return counts;
+}
+function ordered(counts, order){
+  let entries = Object.entries(counts);
+  if(order) entries.sort((a,b)=>order.indexOf(a[0])-order.indexOf(b[0]));
+  else entries.sort((a,b)=>b[1]-a[1]);
+  return { labels: entries.map(e=>e[0]), data: entries.map(e=>e[1]) };
+}
+function texts(docs, key){ return docs.map(d=>d[key]).filter(v=>v && String(v).trim()); }
+
+// ── RENDER ──
+function render(docs){
+  showState('dash');
+  charts.forEach(c=>c.destroy()); charts=[];
+
+  // STATS
+  const total = docs.length;
+  const conCorreo = docs.filter(d=>d.contacto && d.contacto.email).length;
+  const fechas = docs.map(d=>(d.metadata&&d.metadata.fechaHora)||null).filter(Boolean).sort();
+  const ultima = fechas.length ? new Date(fechas[fechas.length-1]).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  $('stats').innerHTML = `
+    <div class="stat"><div class="n">${total}</div><div class="l">Respuestas</div></div>
+    <div class="stat"><div class="n">${conCorreo}</div><div class="l">Dejaron correo</div></div>
+    <div class="stat"><div class="n">${ultima}</div><div class="l">Última respuesta</div></div>`;
+
+  const grid = $('grid'); grid.innerHTML='';
+  if(total===0){
+    grid.innerHTML = `<div class="card wide"><div class="empty">Aún no hay respuestas. En cuanto alguien complete la encuesta, aparecerá aquí en vivo.</div></div>`;
+    return;
+  }
+
+  for(const q of QUESTIONS){
+    const card = document.createElement('div');
+    card.className = 'card' + (q.type==='text'?' wide':'');
+    card.innerHTML = `<h3>${q.label}</h3>`;
+
+    if(q.type==='text'){
+      const list = texts(docs, q.key);
+      if(!list.length){ card.innerHTML += `<div class="empty">Sin respuestas de texto todavía.</div>`; }
+      else {
+        card.innerHTML += `<div class="sub">${list.length} respuesta(s)</div>`;
+        const box = document.createElement('div'); box.className='txt-list';
+        list.forEach(t=>{ const it=document.createElement('div'); it.className='txt-item'; it.textContent=t; box.appendChild(it); });
+        card.appendChild(box);
+      }
+      grid.appendChild(card);
+      continue;
+    }
+
+    const { labels, data } = ordered(aggregate(docs,q.key), q.order);
+    const box = document.createElement('div'); box.className='chart-box';
+    const cv = document.createElement('canvas'); box.appendChild(cv);
+    card.appendChild(box);
+    grid.appendChild(card);
+    if(!labels.length){ box.outerHTML = `<div class="empty">Sin datos.</div>`; continue; }
+
+    const isDonut = q.type==='single';
+    const isMulti = q.type==='multi';
+    const ch = new Chart(cv, {
+      type: isDonut ? 'doughnut' : 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: isDonut ? labels.map((_,i)=>PALETTE[i%PALETTE.length]) : 'rgba(196,114,74,0.85)',
+          borderColor: isDonut ? '#fff' : 'rgba(196,114,74,1)',
+          borderWidth: isDonut ? 2 : 0,
+          borderRadius: isMulti||q.type==='scale' ? 6 : 0,
+        }]
+      },
+      options: {
+        indexAxis: isMulti ? 'y' : 'x',
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:isDonut, position:'bottom', labels:{font:{family:'Inter',size:11}, color:'#6B5744', boxWidth:12, padding:10} } },
+        scales: isDonut ? {} : {
+          x:{ ticks:{font:{family:'Inter',size:11},color:'#6B5744'}, grid:{color:'rgba(139,111,82,0.08)'} },
+          y:{ ticks:{font:{family:'Inter',size:11},color:'#6B5744'}, grid:{display:false}, beginAtZero:true }
+        }
+      }
+    });
+    charts.push(ch);
+  }
+
+  // CONTACTOS
+  const conContacto = docs.filter(d=>d.contacto && (d.contacto.nombre||d.contacto.email||d.contacto.whatsapp));
+  const cc = document.createElement('div'); cc.className='card wide';
+  cc.innerHTML = `<h3>📇 Contactos (${conContacto.length})</h3><div class="sub">Quienes dejaron sus datos para avisarles de la apertura. Trátalos según la política de datos (Ley 1581).</div>`;
+  if(!conContacto.length){ cc.innerHTML += `<div class="empty">Nadie ha dejado contacto todavía.</div>`; }
+  else {
+    const rows = conContacto.map(d=>{
+      const c=d.contacto, f=(d.metadata&&d.metadata.fechaHora)?new Date(d.metadata.fechaHora).toLocaleDateString('es-CO'):'—';
+      const mail=c.email?`<a href="mailto:${c.email}">${c.email}</a>`:'—';
+      const wa=c.whatsapp?`<a href="https://wa.me/${String(c.whatsapp).replace(/\D/g,'')}" target="_blank">${c.whatsapp}</a>`:'—';
+      return `<tr><td>${c.nombre||'—'}</td><td>${mail}</td><td>${wa}</td><td>${f}</td></tr>`;
+    }).join('');
+    cc.innerHTML += `<div class="tbl-scroll"><table><thead><tr><th>Nombre</th><th>Correo</th><th>WhatsApp</th><th>Fecha</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  grid.appendChild(cc);
+}
+
+// ── CSV ──
+$('btnCsv').addEventListener('click', ()=>{
+  if(!lastDocs.length) return;
+  const cols=['fecha',...QUESTIONS.map(q=>q.key),'nombre','email','whatsapp','aceptoDatos'];
+  const esc=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const lines=[cols.join(',')];
+  for(const d of lastDocs){
+    const c=d.contacto||{};
+    const row=[
+      (d.metadata&&d.metadata.fechaHora)||'',
+      ...QUESTIONS.map(q=>Array.isArray(d[q.key])?d[q.key].join(' | '):(d[q.key]||'')),
+      c.nombre||'', c.email||'', c.whatsapp||'', c.aceptoTratamientoDatos?'sí':''
+    ];
+    lines.push(row.map(esc).join(','));
+  }
+  const blob=new Blob(["﻿"+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='mapale-encuestas.csv'; a.click(); URL.revokeObjectURL(a.href);
+});
+</script>
+</body>
+</html>
